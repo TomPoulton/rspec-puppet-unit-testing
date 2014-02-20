@@ -1,0 +1,6 @@
+.idea
+*.iml
+Gemfile.lock
+.ruby-version
+.ruby-gemset
+build.gradle
