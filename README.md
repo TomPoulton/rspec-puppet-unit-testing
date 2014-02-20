@@ -2,7 +2,7 @@
 
 ## The Problem
 
-Take a look at the [foo::bar](foo/manifests/bar.pp) class, if you want to unit test this class there are a few dependencies that ideally we'd like to mock:
+Take a look at the `foo::bar` class ([foo/manifests/bar.pp](foo/manifests/bar.pp)), if you want to unit test this class there are a few dependencies that ideally we'd like to mock:
 
 ##### `does_something` function
 This function is defined within the foo module, but we don't want to test its functionality in the tests for `foo::bar`, we would write a separate spec for this function
@@ -13,7 +13,7 @@ Hiera is just another function but we still need to get some values out of it. T
 ##### functions from other modules
 I haven't included one here, but a prime example would be using a function from stdlib. There are ways (like librarian puppet) of bringing down other modules during your tests, but again, ideally we only want to test this specific class and not any functions that the class depends on.
 
-##### [foo::baz](foo/manifests/baz.pp) defined type
+##### `foo::baz` defined type ([foo/manifests/baz.pp](foo/manifests/baz.pp))
 This is defined within the `foo` module so there's not a problem with it being missing, but `baz` references a class from another module. This isn't an ideal thing to do, but I think that sometimes it's necessary!?
 
 Regardless of whether `foo::baz` contains classes from another module, classes from the same module, or no other classes at all, we still don't want to be testing `foo::baz` in the spec for `foo::bar`.
@@ -23,9 +23,7 @@ In this case `foo::dependency` is also in the `foo` module, but it's something t
 
 ## The Solution
 
-See [bar_spec.rb](foo/spec/classes/bar_spec.rb)
-
-There are two key parts:
+See the spec for the `bar` class ([foo/spec/classes/bar_spec.rb](foo/spec/classes/bar_spec.rb)). This has examples of all of the following, but there are two key parts:
 
 ##### 1. `let(:pre_condition)`
 
@@ -64,9 +62,24 @@ By passing `nil` as the second parameter to `mock_function`, the puppet function
 
 [bar_spec.rb](foo/spec/classes/bar_spec.rb) has some other examples for default values and other stuffs
 
+## Setup
+
+To get this running for another module:
+- add `puppetlabs_spec_helper` to your Gemfile (or gem install)
+- run `rspec-puppet-init` in the module root as you would normally
+- add the `mock_function` method to the `spec_helper.rb` file
+- add `require 'puppetlabs_spec_helper/module_spec_helper'` to the top of `spec_helper.rb`
+- add `require 'puppetlabs_spec_helper/rake_tasks'` to the top of `Rakefile`
+
+I think that's it!? [puppetlabs_spec_helper](http://rubygems.org/gems/puppetlabs_spec_helper) is mainly for the `mocha` gem, but it does some other usefull stuff too!
+
+## Proof
+
+Almost forgot, you can run this if you want, just clone the repo, `cd` into the `foo` directory, and run `rake spec`. If you play around with it and manage to break it let me know, this is all new so I haven't had a chance to properly test it against loads of scenarios or the rspec-puppet matchers (the `should` things, whatever they're called).
+
 ## The End
 
-You can use this same setup to mock classes, defined types, and functions within specs that test classes, defined types or functions
+You can use this same setup to mock classes, defined types, and functions within specs for classes, defined types or functions
 
 I'm new to rspec and rspec-puppet and still relatively new to ruby so there are probably nicer/better ways to do some of this stuff but it works for me so far.
 
