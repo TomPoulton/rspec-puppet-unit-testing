@@ -78,6 +78,10 @@ before(:each) {
 
 The `before(:each)` bit isn't necessary but it shows how to raise an error if the key isn't present. Note that the error message isn't exactly the same as the one that the real `hiera` would thrown!
 
+## Testing Custom Functions
+
+The spec for `does_something` [modules/foo/spec/functions/does_something_spec.rb](modules/foo/spec/functions/does_something_spec.rb) has a few examples of getting hold of return values, mocking internal function calls, and mocking `lookupvar()` for getting facts
+
 ## Setup
 
 To get this running for another module:
@@ -96,13 +100,13 @@ I think that's it!? [puppetlabs_spec_helper](http://rubygems.org/gems/puppetlabs
 
 Almost forgot, you can run this if you want, just clone the repo, `cd` into the `foo` directory, and run `rake rspec` (or just `rake` as `rspec` is the default task). If you play around with it and manage to break it let me know, this is all new so I haven't had a chance to properly test it against loads of scenarios or the rspec-puppet matchers (the `should` things, whatever they're called).
 
-**Edit:** I did say to run `rake spec` above, but really you should run `rake rspec`. The `spec` task is provided by `puppetlabs_spec_helper/rake_tasks` along with a couple of others, by default it cleans up your fixtures dir, which can be usefull (and you can use the `spec_prep` and `spec_clean` yourself if you want), but it also deletes your site.pp file which breaks these tests!
+**Edit:** I did say to run `rake spec` above, but really you should run `rake rspec`. The `spec` task is provided by `puppetlabs_spec_helper/rake_tasks` along with a couple of others, by default it cleans up your fixtures dir, which can be useful (and you can use the `spec_prep` and `spec_clean` yourself if you want), but it also deletes your site.pp file which breaks these tests!
 
-## Tesing All Modules
+## Testing All Modules
 
-I've also put a Rakefile in what would be the root of the puppet directory (i.e. it's at the same level as the modules directory). You can run the tests for all modules by running `rake rspec` from the project's root directory (again `rspec` is the default task, so just running `rake` will work too). You can run all the specs for a specific moudule by running `rake rspec:[module]` e.g. `rake rspec:foo`. Running `rake help` (comes from `puppetlabs_spec_helper`) will show the full list of module tasks.
+I've also put a Rakefile in what would be the root of the puppet directory (i.e. it's at the same level as the modules directory). You can run the tests for all modules by running `rake rspec` from the project's root directory (again `rspec` is the default task, so just running `rake` will work too). You can run all the specs for a specific module by running `rake rspec:[module]` e.g. `rake rspec:foo`. Running `rake help` (comes from `puppetlabs_spec_helper`) will show the full list of module tasks.
 
-**Caveat 1:** Running `rake rspec` is like `cd`ing into each module directory and running `rake rspec`, except that it isn't, so there might be some wierd things to look out for!?
+**Caveat 1:** Running `rake rspec` is like `cd`ing into each module directory and running `rake rspec`, except that it isn't, so there might be some weird things to look out for!?
 
 **Caveat 2:** If you run `rake rspec` and the task for one of the modules fails, no subsequent tasks in the list will run. Ideally the tasks for all the modules should run even if one (or all) of them fail. If someone could just fix it, that would be great :)
 
