@@ -2,7 +2,7 @@
 
 ## The Problem
 
-Take a look at the `foo::bar` class ([foo/manifests/bar.pp](foo/manifests/bar.pp)), if you want to unit test this class there are a few dependencies that ideally we'd like to mock:
+Take a look at the `foo::bar` class ([modules/foo/manifests/bar.pp](modules/foo/manifests/bar.pp)), if you want to unit test this class there are a few dependencies that ideally we'd like to mock:
 
 ##### `does_something` function
 This function is defined within the foo module, but we don't want to test its functionality in the tests for `foo::bar`, we would write a separate spec for this function
@@ -13,7 +13,7 @@ Hiera is just another function but we still need to get some values out of it. T
 ##### functions from other modules
 I haven't included one here, but a prime example would be using a function from stdlib. There are ways (like librarian puppet) of bringing down other modules during your tests, but again, ideally we only want to test this specific class and not any functions that the class depends on.
 
-##### `foo::baz` defined type ([foo/manifests/baz.pp](foo/manifests/baz.pp))
+##### `foo::baz` defined type ([modules/foo/manifests/baz.pp](modules/foo/manifests/baz.pp))
 This is defined within the `foo` module so there's not a problem with it being missing, but `baz` references a class from another module. This isn't an ideal thing to do, but I think that sometimes it's necessary!?
 
 Regardless of whether `foo::baz` contains classes from another module, classes from the same module, or no other classes at all, we still don't want to be testing `foo::baz` in the spec for `foo::bar`.
@@ -23,7 +23,7 @@ In this case `foo::dependency` is also in the `foo` module, but it's something t
 
 ## The Solution
 
-See the spec for the `bar` class ([foo/spec/classes/bar_spec.rb](foo/spec/classes/bar_spec.rb)). This has examples of all of the following, but there are two key parts:
+See the spec for the `bar` class ([modules/foo/spec/classes/bar_spec.rb](modules/foo/spec/classes/bar_spec.rb)). This has examples of all of the following, but there are two key parts:
 
 ##### 1. `let(:pre_condition)`
 
@@ -36,7 +36,7 @@ This is nothing new, there are examples of `let(:pre_condition)` all over the pl
 
 ##### 2. `mock_function()`
 
-The `mock_function()` method is defined within the [spec_helper.rb](foo/spec/spec_helper.rb) file. The rest of the file is pretty much the same as what gets generated when you run `rspec-puppet-init`.
+The `mock_function()` method is defined within the [spec_helper.rb](modules/foo/spec/spec_helper.rb) file. The rest of the file is pretty much the same as what gets generated when you run `rspec-puppet-init`.
 
 The key part is the `newfunction` call which can be re-written like so
 
@@ -60,7 +60,7 @@ before(:each) {
 
 By passing `nil` as the second parameter to `mock_function`, the puppet function `my_func` will be created with `:type => :rvalue` by default
 
-[bar_spec.rb](foo/spec/classes/bar_spec.rb) has some other examples for default values and other stuffs
+[bar_spec.rb](modules/foo/spec/classes/bar_spec.rb) has some other examples for default values and other stuffs
 
 ## Setup
 
