@@ -7,6 +7,7 @@ RSpec.configure do |c|
   c.config = '/doesnotexist'
   c.module_path = File.join(fixture_path, 'modules')
   c.manifest_dir = File.join(fixture_path, 'manifests')
+  c.color = true
 end
 
 def mock_function(name, options = {})
