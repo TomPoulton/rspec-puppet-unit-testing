@@ -8,10 +8,10 @@ Take a look at the `foo::bar` class ([modules/foo/manifests/bar.pp](modules/foo/
 This function is defined within the foo module, but we don't want to test its functionality in the tests for `foo::bar`, we would write a separate spec for this function
 
 ##### `hiera` function
-Hiera is just another function but we still need to get some values out of it. There are a few ways of mocking hiera and we'll cover them later
+There are a few ways of handling Hiera with `rspec-puppet` and [`rspec-hiera-puppet`](https://github.com/amfranz/rspec-hiera-puppet), really `hiera` is just another function but we still need to get some values out of it.
 
 ##### functions from other modules
-I haven't included one here, but a prime example would be using a function from stdlib. There are ways (like librarian puppet) of bringing down other modules during your tests, but again, ideally we only want to test this specific class and not any functions that the class depends on.
+I haven't included one here, but a prime example would be using a function from `stdlib`. There are ways (like librarian puppet) of bringing down other modules during your tests, but again, ideally we only want to test this specific class and not any functions that the class depends on.
 
 ##### `foo::baz` defined type ([modules/foo/manifests/baz.pp](modules/foo/manifests/baz.pp))
 This is defined within the `foo` module so there's not a problem with it being missing, but `baz` references a class from another module. This isn't an ideal thing to do, but I think that sometimes it's necessary!?
@@ -46,36 +46,65 @@ Puppet::Parser::Functions.newfunction(name.to_sym, type_hash) do |args|
 end
 ```
 
-If it looks familiar, that's `because` this is how you write custom functions for puppet. The difference is that all the function does is call the `call` method on your `mock_func` object and return the result.
+If it looks familiar, that's because this is how you write custom functions for puppet. The difference is that all the function does is call the `call` method on your `mock_func` object and return the result.
 
-So for example, if the class you're testing calls `my_func('a_string', 3)` and expects to get `penguin` in return (it's a weird function I know but just run with it!) then you can mock this by doing:
+So for example, if the class you're testing calls `my_func('a_string', 3)` and expects to get `'penguin'` in return (it's a weird function I know but just run with it!) then you can mock this by doing:
 
 ```ruby
 my_func = mock_function('my_func', nil)
 
 before(:each) {
-  my_func.stubs(:call).with(['a_string'], 3).returns('penguin')
+  my_func.stubs(:call).with(['a_string', 3]).returns('penguin')
 }
 ```
+
+Note that all mock functions take one parameter, which is an array of values, like an array of args funnily enough!
 
 By passing `nil` as the second parameter to `mock_function`, the puppet function `my_func` will be created with `:type => :rvalue` by default
 
 [bar_spec.rb](modules/foo/spec/classes/bar_spec.rb) has some other examples for default values and other stuffs
+
+## Mocking Hiera
+
+`hiera` is just another function so mock it like so:
+
+```ruby
+hiera = mock_function('hiera', nil)
+before(:each) {
+  hiera.stubs(:call).raises(Puppet::ParseError.new('Key not found'))
+  hiera.stubs(:call).with(['my-key']).returns('badger')
+}
+```
+
+The `before(:each)` bit isn't necessary but it shows how to raise an error if the key isn't present. Note that the error message isn't exactly the same as the one that the real `hiera` would thrown!
 
 ## Setup
 
 To get this running for another module:
 - add `puppetlabs_spec_helper` to your Gemfile (or gem install)
 - run `rspec-puppet-init` in the module root as you would normally
-- add the `mock_function` method to the `spec_helper.rb` file
-- add `require 'puppetlabs_spec_helper/module_spec_helper'` to the top of `spec_helper.rb`
-- add `require 'puppetlabs_spec_helper/rake_tasks'` to the top of `Rakefile`
+- replace the `spec_helper.rb` file with the one from `foo`
+- replace the module's `Rakefile` file with the one from `foo`
+- copy the `Rakefile` from the root of this project if you want to use it
 
-I think that's it!? [puppetlabs_spec_helper](http://rubygems.org/gems/puppetlabs_spec_helper) is mainly for the `mocha` gem, but it does some other usefull stuff too!
+I think that's it!? [puppetlabs_spec_helper](http://rubygems.org/gems/puppetlabs_spec_helper) provides a few things:
+- one if its dependencies is `mocha` which provides the `stubs().with().returns()` stuff
+- it has some nice inbuilt `rake` tasks like `help`, `spec_prep`, `spec_clean`, etc which I'll probably make more use of as my tests become more complex
+- provides a `scope` object that you can hook into for testing functions (example coming soon)
 
 ## Proof
 
-Almost forgot, you can run this if you want, just clone the repo, `cd` into the `foo` directory, and run `rake spec`. If you play around with it and manage to break it let me know, this is all new so I haven't had a chance to properly test it against loads of scenarios or the rspec-puppet matchers (the `should` things, whatever they're called).
+Almost forgot, you can run this if you want, just clone the repo, `cd` into the `foo` directory, and run `rake rspec` (or just `rake` as `rspec` is the default task). If you play around with it and manage to break it let me know, this is all new so I haven't had a chance to properly test it against loads of scenarios or the rspec-puppet matchers (the `should` things, whatever they're called).
+
+**Edit:** I did say to run `rake spec` above, but really you should run `rake rspec`. The `spec` task is provided by `puppetlabs_spec_helper/rake_tasks` along with a couple of others, by default it cleans up your fixtures dir, which can be usefull (and you can use the `spec_prep` and `spec_clean` yourself if you want), but it also deletes your site.pp file which breaks these tests!
+
+## Tesing All Modules
+
+I've also put a Rakefile in what would be the root of the puppet directory (i.e. it's at the same level as the modules directory). You can run the tests for all modules by running `rake rspec` from the project's root directory (again `rspec` is the default task, so just running `rake` will work too). You can run all the specs for a specific moudule by running `rake rspec:[module]` e.g. `rake rspec:foo`. Running `rake help` (comes from `puppetlabs_spec_helper`) will show the full list of module tasks.
+
+**Caveat 1:** Running `rake rspec` is like `cd`ing into each module directory and running `rake rspec`, except that it isn't, so there might be some wierd things to look out for!?
+
+**Caveat 2:** If you run `rake rspec` and the task for one of the modules fails, no subsequent tasks in the list will run. Ideally the tasks for all the modules should run even if one (or all) of them fail. If someone could just fix it, that would be great :)
 
 ## The End
 
