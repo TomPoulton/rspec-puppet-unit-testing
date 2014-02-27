@@ -60,7 +60,16 @@ before(:each) {
 
 Note that all mock functions take one parameter, which is an array of values, like an array of args funnily enough!
 
-By passing `nil` as the second parameter to `mock_function`, the puppet function `my_func` will be created with `:type => :rvalue` by default
+By passing `nil` as the second parameter to `mock_function`, the puppet function `my_func` will be created as a return value method (`:type => :rvalue`) by default
+
+If you want to mock a function that doesn't return a value, do this:
+
+```ruby
+non_return = mock_function('non_return', {:type => :statement, :default_value => nil})
+```
+
+- `:type => :statement` is required otherwise puppet will complain that `'non_return' must be the value of a statement`
+- `:default_value => nil` means that `mock_func` has at least one stub method to respond to `call()`, what it returns doesn't matter
 
 [bar_spec.rb](modules/foo/spec/classes/bar_spec.rb) has some other examples for default values and other stuffs
 
