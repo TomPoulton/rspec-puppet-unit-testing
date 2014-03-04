@@ -1,5 +1,9 @@
 # Unit Testing with rspec-puppet
 
+### Update:
+
+I've created a gem for this that includes a `MockFunction` class and a `TemplateHarness` for testing templates. I'll refactor this sample project later, but for now, look at the [rspec-puppet-utils](https://github.com/Accuity/rspec-puppet-utils) project
+
 ## The Problem
 
 Take a look at the `foo::bar` class ([modules/foo/manifests/bar.pp](modules/foo/manifests/bar.pp)), if you want to unit test this class there are a few dependencies that ideally we'd like to mock:
