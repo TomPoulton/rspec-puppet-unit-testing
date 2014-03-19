@@ -75,6 +75,15 @@ non_return = mock_function('non_return', {:type => :statement, :default_value =>
 - `:type => :statement` is required otherwise puppet will complain that `'non_return' must be the value of a statement`
 - `:default_value => nil` means that `mock_func` has at least one stub method to respond to `call()`, what it returns doesn't matter
 
+If you want to mock a function that doesn't return a value, do this:
+
+```ruby
+non_return_function = mock_function('non_return_function', {:type => :statement, :default_value => true} )
+```
+
+- `:type => :statement` is required otherwise puppet will complain that it "must be the value of a statement"
+- `:default_value => nil` means that the mock_func object has at least one stub method to respond to `call()`, what it returns doesn't matter
+
 [bar_spec.rb](modules/foo/spec/classes/bar_spec.rb) has some other examples for default values and other stuffs
 
 ## Mocking Hiera
