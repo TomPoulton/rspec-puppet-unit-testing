@@ -2,7 +2,7 @@
 
 ### Update:
 
-I've created a gem for this that includes a `MockFunction` class and a `TemplateHarness` for testing templates. I'll refactor this sample project later, but for now, look at the [rspec-puppet-utils](https://github.com/Accuity/rspec-puppet-utils) project
+I've created a gem for this - [rspec-puppet-utils](https://github.com/Accuity/rspec-puppet-utils) - that includes a `MockFunction` class, a `TemplateHarness` class for testing templates, and a `HierData::Validator` class for checking yaml files. I've refactored this sample project to use `rspec-puppet-utils`
 
 ## The Problem
 
@@ -38,67 +38,32 @@ This is where we mock out the other classes or defined types
 
 This is nothing new, there are examples of `let(:pre_condition)` all over the place, I included them here to create a complete example
 
-##### 2. `mock_function()`
+##### 2. `MockFunction`
 
-The `mock_function()` method is defined within the [spec_helper.rb](modules/foo/spec/spec_helper.rb) file. The rest of the file is pretty much the same as what gets generated when you run `rspec-puppet-init`.
-
-The key part is the `newfunction` call which can be re-written like so
-
-```ruby
-Puppet::Parser::Functions.newfunction(name.to_sym, type_hash) do |args|
-    mock_func.call(args)
-end
-```
-
-If it looks familiar, that's because this is how you write custom functions for puppet. The difference is that all the function does is call the `call` method on your `mock_func` object and return the result.
+The `MockFunction` class comes from [rspec-puppet-utils](https://github.com/Accuity/rspec-puppet-utils). Internally it calls `Puppet::Parser::Functions.newfunction()` If it looks familiar, that's because this is how you write custom functions for puppet. The difference is that all the new function does is call the `call` method on your `MockFunction` object and return the result.
 
 So for example, if the class you're testing calls `my_func('a_string', 3)` and expects to get `'penguin'` in return (it's a weird function I know but just run with it!) then you can mock this by doing:
 
 ```ruby
-my_func = mock_function('my_func', nil)
-
-before(:each) {
-  my_func.stubs(:call).with(['a_string', 3]).returns('penguin')
+MockFunction.new('my_func') { |f|
+  f.stubs(:call).with(['a_string', 3]).returns('penguin')
 }
 ```
 
 Note that all mock functions take one parameter, which is an array of values, like an array of args funnily enough!
-
-By passing `nil` as the second parameter to `mock_function`, the puppet function `my_func` will be created as a return value method (`:type => :rvalue`) by default
-
-If you want to mock a function that doesn't return a value, do this:
-
-```ruby
-non_return = mock_function('non_return', {:type => :statement, :default_value => nil})
-```
-
-- `:type => :statement` is required otherwise puppet will complain that `'non_return' must be the value of a statement`
-- `:default_value => nil` means that `mock_func` has at least one stub method to respond to `call()`, what it returns doesn't matter
-
-If you want to mock a function that doesn't return a value, do this:
-
-```ruby
-non_return_function = mock_function('non_return_function', {:type => :statement, :default_value => true} )
-```
-
-- `:type => :statement` is required otherwise puppet will complain that it "must be the value of a statement"
-- `:default_value => nil` means that the mock_func object has at least one stub method to respond to `call()`, what it returns doesn't matter
-
-[bar_spec.rb](modules/foo/spec/classes/bar_spec.rb) has some other examples for default values and other stuffs
 
 ## Mocking Hiera
 
 `hiera` is just another function so mock it like so:
 
 ```ruby
-hiera = mock_function('hiera', nil)
-before(:each) {
-  hiera.stubs(:call).raises(Puppet::ParseError.new('Key not found'))
-  hiera.stubs(:call).with(['my-key']).returns('badger')
+MockFunction.new('hiera') { |f|
+  f.stubs(:call).raises(Puppet::ParseError.new('Key not found'))
+  f.stubs(:call).with(['my-key']).returns('badger')
 }
 ```
 
-The `before(:each)` bit isn't necessary but it shows how to raise an error if the key isn't present. Note that the error message isn't exactly the same as the one that the real `hiera` would thrown!
+The block is optional but allows you to setup default behavior, like throwing an error for a key you're not expecting. Note that the error message isn't exactly the same as the one that the real `hiera` would thrown!
 
 ## Testing Custom Functions
 
@@ -108,10 +73,11 @@ The spec for `does_something` [modules/foo/spec/functions/does_something_spec.rb
 
 To get this running for another module:
 - add `puppetlabs_spec_helper` to your Gemfile (or gem install)
+- add `puppet-puppet-utils` to your Gemfile (or gem install)
 - run `rspec-puppet-init` in the module root as you would normally
 - replace the `spec_helper.rb` file with the one from `foo`
 - replace the module's `Rakefile` file with the one from `foo`
-- copy the `Rakefile` from the root of this project if you want to use it
+- copy the `Rakefile` from the root of this project (if you want to use it)
 
 I think that's it!? [puppetlabs_spec_helper](http://rubygems.org/gems/puppetlabs_spec_helper) provides a few things:
 - one if its dependencies is `mocha` which provides the `stubs().with().returns()` stuff
