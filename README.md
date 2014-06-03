@@ -73,7 +73,7 @@ The spec for `does_something` [modules/foo/spec/functions/does_something_spec.rb
 
 To get this running for another module:
 - add `puppetlabs_spec_helper` to your Gemfile (or gem install)
-- add `puppet-puppet-utils` to your Gemfile (or gem install)
+- add `rspec-puppet-utils` to your Gemfile (or gem install)
 - run `rspec-puppet-init` in the module root as you would normally
 - replace the `spec_helper.rb` file with the one from `foo`
 - replace the module's `Rakefile` file with the one from `foo`
